@@ -184,7 +184,11 @@ function App() {
                 Click the swatch to pick a color
               </p>
             </div>
-            <div className="flex items-center gap-1.5">
+          </div>
+
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-[11px] text-zenith-muted">Presets</span>
+            <div className="flex items-center gap-2">
               {ACCENT_PRESETS.map((color) => {
                 const selected = accentSelected === color
                 return (
