@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    @apply m-0 min-h-full;
+  }
+
+  body {
+    @apply w-[340px] overflow-x-hidden bg-zenith-bg font-sans text-slate-100 antialiased;
+  }
+}
