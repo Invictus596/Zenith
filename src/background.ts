@@ -1,10 +1,10 @@
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.get(['zenModeEnabled', 'accentColor'], (result) => {
+  chrome.storage.sync.get(['zenModeEnabled', 'activeTheme'], (result) => {
     if (result.zenModeEnabled === undefined) {
       chrome.storage.sync.set({ zenModeEnabled: true });
     }
-    if (result.accentColor === undefined) {
-      chrome.storage.sync.set({ accentColor: '#8b5cf6' });
+    if (result.activeTheme === undefined) {
+      chrome.storage.sync.set({ activeTheme: 'catppuccin-mocha' });
     }
   });
 });

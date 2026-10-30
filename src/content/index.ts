@@ -1,6 +1,37 @@
+const THEMES: Record<string, string> = {
+  'catppuccin-mocha': `
+    --z-bg-base: #1e1e2e;
+    --z-bg-surface: #313244;
+    --z-text-main: #cdd6f4;
+    --z-text-muted: #a6adc8;
+    --z-accent: #cba6f7;
+  `,
+  'tokyo-night': `
+    --z-bg-base: #1a1b26;
+    --z-bg-surface: #24283b;
+    --z-text-main: #c0caf5;
+    --z-text-muted: #9aa5ce;
+    --z-accent: #7aa2f7;
+  `,
+  'sakura-premium': `
+    --z-bg-base: #fffafb;
+    --z-bg-surface: #ffe1e8;
+    --z-text-main: #5c434d;
+    --z-text-muted: #9e7f8c;
+    --z-accent: #ff9eb8;
+    /* Future animated background hook */
+    --z-bg-image: url('sakura-gif-placeholder'); 
+  `
+};
+
+interface ZenithSettings {
+  zenModeEnabled?: boolean;
+  activeTheme?: string;
+}
+
 const initZenithTheme = async () => {
-  const result = await chrome.storage.sync.get(['zenModeEnabled', 'accentColor']);
-  const { zenModeEnabled = true, accentColor = '#8b5cf6' } = result as { zenModeEnabled?: boolean; accentColor?: string };
+  const result = await chrome.storage.sync.get(['zenModeEnabled', 'activeTheme']);
+  const { zenModeEnabled = true, activeTheme = 'catppuccin-mocha' } = result as ZenithSettings;
   
   let styleTag = document.getElementById('zenith-theme-vars') as HTMLStyleElement;
   if (!styleTag) {
@@ -9,45 +40,26 @@ const initZenithTheme = async () => {
     document.head.appendChild(styleTag);
   }
   
-  updateThemeStyles(styleTag, zenModeEnabled, accentColor);
+  updateThemeStyles(styleTag, zenModeEnabled, activeTheme);
 
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'sync') {
-      const newEnabled = (changes.zenModeEnabled?.newValue !== undefined) ? 
-        (changes.zenModeEnabled.newValue as unknown as boolean) : zenModeEnabled;
-      const newColor = (changes.accentColor?.newValue !== undefined) ? 
-        (changes.accentColor.newValue as unknown as string) : accentColor;
-      updateThemeStyles(styleTag, newEnabled, newColor);
-    }
+  chrome.storage.onChanged.addListener((changes) => {
+    const newEnabled = changes.zenModeEnabled?.newValue as boolean | undefined;
+    const newTheme = changes.activeTheme?.newValue as string | undefined;
+    updateThemeStyles(styleTag, newEnabled ?? zenModeEnabled, newTheme ?? activeTheme);
   });
 };
 
-const updateThemeStyles = (styleTag: HTMLStyleElement, isEnabled: boolean, color: string) => {
-  if (isEnabled) {
+const updateThemeStyles = (styleTag: HTMLStyleElement, isEnabled: boolean, themeName: string) => {
+  if (isEnabled && THEMES[themeName]) {
     styleTag.textContent = `
       :root { 
-        --zenith-accent: ${color}; 
+        ${THEMES[themeName]}
       }
       
-      /* Zenith ChatGPT Theme Overrides */
-      
-      /* 1. Apply Accent Color to User Chat Bubbles */
-      div[data-message-author-role="user"] > div {
-        background-color: var(--zenith-accent) !important;
-        color: #ffffff !important;
-        transition: background-color 0.3s ease;
-      }
-
-      /* 2. Widen the Chat Container for better code reading */
-      .md\\:max-w-3xl, 
-      .lg\\:max-w-\\[40rem\\], 
-      .xl\\:max-w-\\[48rem\\] {
-        max-width: 85% !important;
-      }
-      
-      /* 3. Subtle accent on the send button when active */
-      button[data-testid="send-button"]:enabled {
-        background-color: var(--zenith-accent) !important;
+      /* Global Test Rule - forcefully applies background to test sites */
+      body {
+        background-color: var(--z-bg-base) !important;
+        color: var(--z-text-main) !important;
       }
     `;
   } else {
