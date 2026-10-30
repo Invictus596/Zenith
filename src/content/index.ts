@@ -40,64 +40,96 @@ const getSiteCSS = (): string => {
   return '';
 };
 
+let currentCSS = '';
+
+const generateCSS = (isEnabled: boolean, themeName: string): string => {
+  if (!isEnabled || !THEMES[themeName]) {
+    currentCSS = '';
+    return '';
+  }
+  const siteCSS = getSiteCSS();
+  return `
+    :root { 
+      ${THEMES[themeName]}
+    }
+    
+    /* Premium Global Overlay */
+    html::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none !important;
+      z-index: 2147483647 !important; /* Max z-index to sit above all UI */
+      background-image: var(--z-premium-overlay, none);
+      background-size: cover;
+      background-position: center;
+      opacity: var(--z-premium-opacity, 0);
+      mix-blend-mode: overlay;
+    }
+
+    ${siteCSS}
+  `;
+};
+
+const ensureStyleTag = () => {
+  if (!currentCSS) return;
+  
+  console.log('[Zenith] Ensuring style tag exists for:', window.location.hostname);
+  
+  let styleTag = document.getElementById('zenith-theme-vars') as HTMLStyleElement;
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = 'zenith-theme-vars';
+    const rootTarget = document.head || document.documentElement;
+    rootTarget.appendChild(styleTag);
+    console.log('[Zenith] Style tag injected at document_start.');
+  }
+  
+  if (styleTag.textContent !== currentCSS) {
+    styleTag.textContent = currentCSS;
+    console.log('[Zenith] Style content updated.');
+  }
+};
+
 const initZenithTheme = async () => {
+  console.log('[Zenith] Content script booting up on:', window.location.hostname);
+  
   const result = await chrome.storage.sync.get(['zenModeEnabled', 'activeTheme']);
   const { zenModeEnabled = true, activeTheme = 'catppuccin-mocha' } = result as {
     zenModeEnabled?: boolean;
     activeTheme?: string;
   };
-  
-  // Safely find or create the style tag
-  let styleTag = document.getElementById('zenith-theme-vars') as HTMLStyleElement;
-  if (!styleTag) {
-    styleTag = document.createElement('style');
-    styleTag.id = 'zenith-theme-vars';
-    
-    // CRITICAL FIX: At document_start, document.head might be null. 
-    // We append to document.documentElement (<html>) instead.
-    const rootTarget = document.head || document.documentElement;
-    rootTarget.appendChild(styleTag);
-  }
-  
-  updateThemeStyles(styleTag, zenModeEnabled, activeTheme);
 
-  chrome.storage.onChanged.addListener((changes) => {
-    const newEnabled = changes.zenModeEnabled?.newValue !== undefined
-      ? Boolean(changes.zenModeEnabled.newValue)
-      : zenModeEnabled;
-    const newTheme = changes.activeTheme?.newValue !== undefined
-      ? String(changes.activeTheme.newValue)
-      : activeTheme;
-    updateThemeStyles(styleTag, newEnabled, newTheme);
+  currentCSS = generateCSS(zenModeEnabled, activeTheme);
+  ensureStyleTag();
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync') {
+      const newEnabled = changes.zenModeEnabled?.newValue !== undefined ? Boolean(changes.zenModeEnabled.newValue) : zenModeEnabled;
+      const newTheme = changes.activeTheme?.newValue !== undefined ? String(changes.activeTheme.newValue) : activeTheme;
+      console.log('[Zenith] Storage changed:', { enabled: newEnabled, theme: newTheme });
+      currentCSS = generateCSS(newEnabled, newTheme);
+      ensureStyleTag();
+    }
   });
-};
 
-const updateThemeStyles = (styleTag: HTMLStyleElement, isEnabled: boolean, themeName: string) => {
-  if (isEnabled && THEMES[themeName]) {
-    styleTag.textContent = `
-      :root { 
-        ${THEMES[themeName]}
+  const observer = new MutationObserver((mutations) => {
+    let deleted = false;
+    for (const mutation of mutations) {
+      for (const node of mutation.removedNodes) {
+        if (node instanceof HTMLElement && (node as HTMLElement).id === 'zenith-theme-vars') {
+          deleted = true;
+        }
       }
-      
-      /* Premium Global Overlay */
-      html::after {
-        content: "";
-        position: fixed;
-        top: 0; left: 0; width: 100vw; height: 100vh;
-        pointer-events: none !important;
-        z-index: 2147483647 !important; /* Max z-index to sit above all UI */
-        background-image: var(--z-premium-overlay, none);
-        background-size: cover;
-        background-position: center;
-        opacity: var(--z-premium-opacity, 0);
-        mix-blend-mode: overlay;
-      }
+    }
+    if (deleted && currentCSS) {
+      console.log('[Zenith] Style tag deleted by page engine. Re-injecting.');
+      ensureStyleTag();
+    }
+  });
 
-      ${getSiteCSS()}
-    `;
-  } else {
-    styleTag.textContent = ''; 
-  }
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  console.log('[Zenith] MutationObserver started.');
 };
 
 initZenithTheme();
