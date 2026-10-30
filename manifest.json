@@ -2,22 +2,33 @@
   "manifest_version": 3,
   "name": "Zenith",
   "version": "0.1.0",
-  "description": "Zen Mode for the web. Inject custom themes and UX layout tweaks into the sites you use every day.",
-  "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["*://*.github.com/*"],
+  "description": "Functional aesthetic tweaks and focus modes for web applications.",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://github.com/*",
+    "*://chatgpt.com/*"
+  ],
   "background": {
     "service_worker": "src/background.ts",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": ["*://*.github.com/*"],
-      "js": ["src/content/index.ts"],
+      "matches": [
+        "*://github.com/*",
+        "*://chatgpt.com/*"
+      ],
+      "js": [
+        "src/content/index.ts"
+      ],
       "run_at": "document_idle"
     }
-  ],
-  "action": {
-    "default_title": "Zenith",
-    "default_popup": "index.html"
-  }
+  ]
 }
