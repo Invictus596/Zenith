@@ -13,7 +13,8 @@
   ],
   "host_permissions": [
     "*://github.com/*",
-    "*://chatgpt.com/*"
+    "*://chatgpt.com/*",
+    "*://*.youtube.com/*"
   ],
   "background": {
     "service_worker": "src/background.ts",
@@ -23,12 +24,13 @@
     {
       "matches": [
         "*://github.com/*",
-        "*://chatgpt.com/*"
+        "*://chatgpt.com/*",
+        "*://*.youtube.com/*"
       ],
       "js": [
         "src/content/index.ts"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ]
 }

@@ -1,3 +1,6 @@
+import { youtubeCSS } from './sites/youtube';
+import { chatgptCSS } from './sites/chatgpt';
+
 const THEMES: Record<string, string> = {
   'catppuccin-mocha': `
     --z-bg-base: #1e1e2e;
@@ -29,6 +32,13 @@ interface ZenithSettings {
   activeTheme?: string;
 }
 
+const getSiteCSS = (): string => {
+  const hostname = window.location.hostname;
+  if (hostname.includes('youtube.com')) return youtubeCSS;
+  if (hostname.includes('chatgpt.com')) return chatgptCSS;
+  return '';
+};
+
 const initZenithTheme = async () => {
   const result = await chrome.storage.sync.get(['zenModeEnabled', 'activeTheme']);
   const { zenModeEnabled = true, activeTheme = 'catppuccin-mocha' } = result as ZenithSettings;
@@ -43,24 +53,20 @@ const initZenithTheme = async () => {
   updateThemeStyles(styleTag, zenModeEnabled, activeTheme);
 
   chrome.storage.onChanged.addListener((changes) => {
-    const newEnabled = changes.zenModeEnabled?.newValue as boolean | undefined;
-    const newTheme = changes.activeTheme?.newValue as string | undefined;
-    updateThemeStyles(styleTag, newEnabled ?? zenModeEnabled, newTheme ?? activeTheme);
+    const newEnabled = changes.zenModeEnabled?.newValue !== undefined ? Boolean(changes.zenModeEnabled.newValue) : zenModeEnabled;
+    const newTheme = changes.activeTheme?.newValue !== undefined ? String(changes.activeTheme.newValue) : activeTheme;
+    updateThemeStyles(styleTag, newEnabled, newTheme);
   });
 };
 
 const updateThemeStyles = (styleTag: HTMLStyleElement, isEnabled: boolean, themeName: string) => {
   if (isEnabled && THEMES[themeName]) {
+    const siteCSS = getSiteCSS();
     styleTag.textContent = `
       :root { 
         ${THEMES[themeName]}
       }
-      
-      /* Global Test Rule - forcefully applies background to test sites */
-      body {
-        background-color: var(--z-bg-base) !important;
-        color: var(--z-text-main) !important;
-      }
+      ${siteCSS}
     `;
   } else {
     styleTag.textContent = ''; 
