@@ -14,7 +14,10 @@
   "host_permissions": [
     "*://github.com/*",
     "*://chatgpt.com/*",
-    "*://*.youtube.com/*"
+    "*://*.youtube.com/*",
+    "*://reddit.com/*",
+    "*://x.com/*",
+    "*://gemini.google.com/*"
   ],
   "background": {
     "service_worker": "src/background.ts",
@@ -25,7 +28,10 @@
       "matches": [
         "*://github.com/*",
         "*://chatgpt.com/*",
-        "*://*.youtube.com/*"
+        "*://*.youtube.com/*",
+        "*://reddit.com/*",
+        "*://x.com/*",
+        "*://gemini.google.com/*"
       ],
       "js": [
         "src/content/index.ts"

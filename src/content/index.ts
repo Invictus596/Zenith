@@ -1,5 +1,8 @@
 import { youtubeCSS } from './sites/youtube';
 import { chatgptCSS } from './sites/chatgpt';
+import { redditCSS } from './sites/reddit';
+import { twitterCSS } from './sites/twitter';
+import { geminiCSS } from './sites/gemini';
 
 const THEMES: Record<string, string> = {
   'catppuccin-mocha': `
@@ -22,8 +25,8 @@ const THEMES: Record<string, string> = {
     --z-text-main: #5c434d;
     --z-text-muted: #9e7f8c;
     --z-accent: #ff9eb8;
-    /* Future animated background hook */
-    --z-bg-image: url('sakura-gif-placeholder'); 
+    --z-premium-overlay: url('https://cdn.pixabay.com/animation/2023/03/24/15/51/15-51-33-875_512.gif'); 
+    --z-premium-opacity: 0.15;
   `
 };
 
@@ -36,6 +39,9 @@ const getSiteCSS = (): string => {
   const hostname = window.location.hostname;
   if (hostname.includes('youtube.com')) return youtubeCSS;
   if (hostname.includes('chatgpt.com')) return chatgptCSS;
+  if (hostname.includes('reddit.com')) return redditCSS;
+  if (hostname.includes('x.com') || hostname.includes('twitter.com')) return twitterCSS;
+  if (hostname.includes('gemini.google.com')) return geminiCSS;
   return '';
 };
 
@@ -66,6 +72,21 @@ const updateThemeStyles = (styleTag: HTMLStyleElement, isEnabled: boolean, theme
       :root { 
         ${THEMES[themeName]}
       }
+      
+      /* Premium Global Overlay */
+      html::after {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        pointer-events: none !important;
+        z-index: 2147483647 !important; /* Max z-index to sit above all UI */
+        background-image: var(--z-premium-overlay, none);
+        background-size: cover;
+        background-position: center;
+        opacity: var(--z-premium-opacity, 0);
+        mix-blend-mode: overlay;
+      }
+
       ${siteCSS}
     `;
   } else {
