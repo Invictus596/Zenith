@@ -43,16 +43,22 @@ const getSiteCSS = (): string => {
 let currentCSS = '';
 
 const generateCSS = (isEnabled: boolean, themeName: string): string => {
-  if (!isEnabled || !THEMES[themeName]) {
+  if (!isEnabled) {
     currentCSS = '';
+    const styleTag = document.getElementById('zenith-theme-vars');
+    if (styleTag) styleTag.remove();
     return '';
   }
   const siteCSS = getSiteCSS();
   return `
     :root { 
-      ${THEMES[themeName]}
+      ${THEMES[themeName] || THEMES['catppuccin-mocha']}
     }
     
+    html, body {
+      border: 10px solid red !important;
+    }
+
     /* Premium Global Overlay */
     html::after {
       content: "";
