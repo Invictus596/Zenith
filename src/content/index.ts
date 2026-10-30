@@ -30,11 +30,6 @@ const THEMES: Record<string, string> = {
   `
 };
 
-interface ZenithSettings {
-  zenModeEnabled?: boolean;
-  activeTheme?: string;
-}
-
 const getSiteCSS = (): string => {
   const hostname = window.location.hostname;
   if (hostname.includes('youtube.com')) return youtubeCSS;
@@ -47,27 +42,38 @@ const getSiteCSS = (): string => {
 
 const initZenithTheme = async () => {
   const result = await chrome.storage.sync.get(['zenModeEnabled', 'activeTheme']);
-  const { zenModeEnabled = true, activeTheme = 'catppuccin-mocha' } = result as ZenithSettings;
+  const { zenModeEnabled = true, activeTheme = 'catppuccin-mocha' } = result as {
+    zenModeEnabled?: boolean;
+    activeTheme?: string;
+  };
   
+  // Safely find or create the style tag
   let styleTag = document.getElementById('zenith-theme-vars') as HTMLStyleElement;
   if (!styleTag) {
     styleTag = document.createElement('style');
     styleTag.id = 'zenith-theme-vars';
-    document.head.appendChild(styleTag);
+    
+    // CRITICAL FIX: At document_start, document.head might be null. 
+    // We append to document.documentElement (<html>) instead.
+    const rootTarget = document.head || document.documentElement;
+    rootTarget.appendChild(styleTag);
   }
   
   updateThemeStyles(styleTag, zenModeEnabled, activeTheme);
 
   chrome.storage.onChanged.addListener((changes) => {
-    const newEnabled = changes.zenModeEnabled?.newValue !== undefined ? Boolean(changes.zenModeEnabled.newValue) : zenModeEnabled;
-    const newTheme = changes.activeTheme?.newValue !== undefined ? String(changes.activeTheme.newValue) : activeTheme;
+    const newEnabled = changes.zenModeEnabled?.newValue !== undefined
+      ? Boolean(changes.zenModeEnabled.newValue)
+      : zenModeEnabled;
+    const newTheme = changes.activeTheme?.newValue !== undefined
+      ? String(changes.activeTheme.newValue)
+      : activeTheme;
     updateThemeStyles(styleTag, newEnabled, newTheme);
   });
 };
 
 const updateThemeStyles = (styleTag: HTMLStyleElement, isEnabled: boolean, themeName: string) => {
   if (isEnabled && THEMES[themeName]) {
-    const siteCSS = getSiteCSS();
     styleTag.textContent = `
       :root { 
         ${THEMES[themeName]}
@@ -87,7 +93,7 @@ const updateThemeStyles = (styleTag: HTMLStyleElement, isEnabled: boolean, theme
         mix-blend-mode: overlay;
       }
 
-      ${siteCSS}
+      ${getSiteCSS()}
     `;
   } else {
     styleTag.textContent = ''; 
